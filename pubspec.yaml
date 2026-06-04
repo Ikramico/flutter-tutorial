@@ -1,0 +1,17 @@
+name: flutter_mastery
+description: A beautiful Flutter Tutorial App
+
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '^3.11.0'        # ← This is what you need
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/logo.jpeg
