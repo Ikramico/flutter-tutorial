@@ -1,95 +1,161 @@
 import 'package:flutter/material.dart';
-import '../../../core/shared_widgets.dart';
+import '../../../core/theme/app_theme.dart';
 
 class ContentSection extends StatelessWidget {
   final ValueChanged<String> onModuleTap;
 
   const ContentSection({super.key, required this.onModuleTap});
 
+  static const _modules = [
+    {
+      'icon': '🧱',
+      'title': 'Widgets 101',
+      'subtitle': '12 lessons',
+      'progress': 0.8,
+    },
+    {
+      'icon': '🎨',
+      'title': 'Styling & Themes',
+      'subtitle': '8 lessons',
+      'progress': 0.5,
+    },
+    {
+      'icon': '🔀',
+      'title': 'Navigation',
+      'subtitle': '6 lessons',
+      'progress': 0.3,
+    },
+    {
+      'icon': '⚡',
+      'title': 'State Management',
+      'subtitle': '10 lessons',
+      'progress': 0.1,
+    },
+    {
+      'icon': '🌐',
+      'title': 'Networking',
+      'subtitle': '7 lessons',
+      'progress': 0.0,
+    },
+    {
+      'icon': '🧪',
+      'title': 'Testing',
+      'subtitle': '5 lessons',
+      'progress': 0.0,
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SectionHeader('📚 Latest Content'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: _ContentCard(
-                  title: 'Widgets Deep Dive',
-                  subtitle: 'Container, Row, Column & more',
-                  icon: Icons.widgets,
-                  color: Colors.blue,
-                  onTap: () => onModuleTap('Opening Widgets Deep Dive...'),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _ContentCard(
-                  title: 'State Management',
-                  subtitle: 'setState, Provider, Riverpod',
-                  icon: Icons.animation,
-                  color: Colors.orange,
-                  onTap: () => onModuleTap('Opening State Management...'),
+              const Text('Learning Modules', style: AppTextStyles.h3),
+              TextButton(
+                onPressed: () => onModuleTap('View all modules'),
+                child: const Text(
+                  'See all',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 12),
+          ...(_modules
+              .map((m) => _ModuleTile(module: m, onTap: onModuleTap))
+              .toList()),
+        ],
+      ),
     );
   }
 }
 
-class _ContentCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
+class _ModuleTile extends StatelessWidget {
+  final Map<String, dynamic> module;
+  final ValueChanged<String> onTap;
 
-  const _ContentCard({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
+  const _ModuleTile({required this.module, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final progress = module['progress'] as double;
+    final isStarted = progress > 0;
+
+    return GestureDetector(
+      onTap: () => onTap('Opened: ${module['title']}'),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: AppColors.primary.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: color, size: 32),
-            ),
-            const SizedBox(height: 16),
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold)),
-            Text(subtitle,
-                style: const TextStyle(color: Colors.grey, fontSize: 14)),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: onTap,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: color,
-                minimumSize: const Size(double.infinity, 44),
+              child: Center(
+                child: Text(
+                  module['icon'] as String,
+                  style: const TextStyle(fontSize: 22),
+                ),
               ),
-              child: const Text('Start Module'),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    module['title'] as String,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    module['subtitle'] as String,
+                    style: AppTextStyles.bodySmall,
+                  ),
+                  if (isStarted) ...[
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        backgroundColor: AppColors.divider,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.primary,
+                        ),
+                        minHeight: 4,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              isStarted ? Icons.play_circle_rounded : Icons.lock_open_rounded,
+              color: AppColors.primary,
+              size: 22,
             ),
           ],
         ),

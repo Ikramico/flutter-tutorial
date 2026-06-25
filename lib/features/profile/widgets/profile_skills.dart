@@ -1,93 +1,105 @@
 import 'package:flutter/material.dart';
-import '../../../core/shared_widgets.dart';
+import '../../../core/theme/app_theme.dart';
 
 class ProfileSkills extends StatelessWidget {
   const ProfileSkills({super.key});
 
   static const _skills = [
-    ('Flutter',  Icons.phone_android,         0.92, Color(0xFF54C5F8)),
-    ('Dart',     Icons.code,                  0.90, Color(0xFF00B4AB)),
-    ('React',    Icons.web,                   0.75, Color(0xFF61DAFB)),
-    ('Firebase', Icons.local_fire_department, 0.80, Color(0xFFFFCA28)),
-    ('Figma',    Icons.design_services,       0.70, Color(0xFFFF7262)),
-    ('Git',      Icons.merge_type,            0.85, Color(0xFFF05032)),
+    {'name': 'Flutter Widgets', 'level': 0.85},
+    {'name': 'Dart Language', 'level': 0.75},
+    {'name': 'State Management', 'level': 0.60},
+    {'name': 'Firebase', 'level': 0.50},
+    {'name': 'REST APIs', 'level': 0.70},
+    {'name': 'UI/UX Design', 'level': 0.55},
   ];
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Card(
-        elevation: 2,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const CardHeader(
-                  icon: Icons.bar_chart, title: 'Skills & Technologies'),
-              const SizedBox(height: 16),
-              ..._skills.map(
-                (s) => Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: _SkillRow(
-                      label: s.$1, icon: s.$2, level: s.$3, color: s.$4),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(
+                  Icons.psychology_outlined,
+                  color: AppColors.primary,
+                  size: 18,
                 ),
+                SizedBox(width: 8),
+                Text('Skills', style: AppTextStyles.h3),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ..._skills.map(
+              (s) => _SkillBar(
+                name: s['name'] as String,
+                level: s['level'] as double,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _SkillRow extends StatelessWidget {
-  final String label;
-  final IconData icon;
+class _SkillBar extends StatelessWidget {
+  final String name;
   final double level;
-  final Color color;
 
-  const _SkillRow({
-    required this.label,
-    required this.icon,
-    required this.level,
-    required this.color,
-  });
+  const _SkillBar({required this.name, required this.level});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: color, size: 18),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(label,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w600, fontSize: 13)),
-            ),
-            Text('${(level * 100).round()}%',
-                style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12)),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: level,
-            minHeight: 6,
-            backgroundColor: Colors.grey.shade200,
-            valueColor: AlwaysStoppedAnimation<Color>(color),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                name,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                '${(level * 100).toInt()}%',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: level,
+              backgroundColor: AppColors.divider,
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.primary,
+              ),
+              minHeight: 7,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

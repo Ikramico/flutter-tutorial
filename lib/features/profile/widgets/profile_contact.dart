@@ -1,137 +1,110 @@
 import 'package:flutter/material.dart';
-import '../../../core/shared_widgets.dart';
+import '../../../core/theme/app_theme.dart';
 
 class ProfileContact extends StatelessWidget {
   const ProfileContact({super.key});
+
+  static const _contacts = [
+    {
+      'icon': Icons.email_outlined,
+      'label': 'Email',
+      'value': 'ishtiaq@example.com',
+      'color': 0xFF3B82F6,
+    },
+    {
+      'icon': Icons.phone_outlined,
+      'label': 'Phone',
+      'value': '+880 1700-000000',
+      'color': 0xFF10B981,
+    },
+    {
+      'icon': Icons.location_on_outlined,
+      'label': 'Location',
+      'value': 'Rajshahi, Bangladesh',
+      'color': 0xFFEF4444,
+    },
+    {
+      'icon': Icons.link_rounded,
+      'label': 'GitHub',
+      'value': 'github.com/ishtiaq',
+      'color': 0xFF8B5CF6,
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Card(
-        elevation: 2,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const CardHeader(
-                  icon: Icons.contact_mail_outlined,
-                  title: 'Contact & Socials'),
-              const SizedBox(height: 16),
-              const _ContactRow(
-                  icon: Icons.mail_outline,
-                  label: 'ikram@dev.com',
-                  color: Colors.deepPurple),
-              const SizedBox(height: 10),
-              const _ContactRow(
-                  icon: Icons.phone_outlined,
-                  label: '+880 17XX-XXXXXX',
-                  color: Colors.green),
-              const SizedBox(height: 10),
-              const _ContactRow(
-                  icon: Icons.location_on_outlined,
-                  label: 'Dhaka, Bangladesh',
-                  color: Colors.redAccent),
-              const Divider(height: 28),
-              const Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  _SocialChip(
-                      icon: Icons.code,
-                      label: 'GitHub',
-                      color: Color(0xFF6E5494)),
-                  _SocialChip(
-                      icon: Icons.business_center_outlined,
-                      label: 'LinkedIn',
-                      color: Color(0xFF0A66C2)),
-                  _SocialChip(
-                      icon: Icons.alternate_email,
-                      label: 'Twitter',
-                      color: Color(0xFF1DA1F2)),
-                  _SocialChip(
-                      icon: Icons.camera_alt_outlined,
-                      label: 'Instagram',
-                      color: Color(0xFFE1306C)),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ContactRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _ContactRow({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: color, size: 18),
-        ),
-        const SizedBox(width: 14),
-        Text(label,
-            style: const TextStyle(
-                fontSize: 13, fontWeight: FontWeight.w500)),
-      ],
-    );
-  }
-}
-
-class _SocialChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _SocialChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {},
-      borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.3)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.divider),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: color, size: 16),
-            const SizedBox(width: 6),
-            Text(label,
-                style: TextStyle(
-                    color: color,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600)),
+            const Row(
+              children: [
+                Icon(
+                  Icons.contact_mail_outlined,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
+                SizedBox(width: 8),
+                Text('Contact', style: AppTextStyles.h3),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ..._contacts.map((c) {
+              final color = Color(c['color'] as int);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        c['icon'] as IconData,
+                        color: color,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            c['label'] as String,
+                            style: AppTextStyles.bodySmall,
+                          ),
+                          Text(
+                            c['value'] as String,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                      color: AppColors.textMuted,
+                    ),
+                  ],
+                ),
+              );
+            }),
           ],
         ),
       ),

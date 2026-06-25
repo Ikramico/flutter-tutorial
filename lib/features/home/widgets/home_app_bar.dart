@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 
 class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onNotification;
@@ -16,29 +17,59 @@ class HomeAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: const Row(
+      backgroundColor: AppColors.primary,
+      elevation: 0,
+      title: Row(
         children: [
-          Icon(Icons.flutter_dash, color: Colors.white, size: 28),
-          SizedBox(width: 10),
-          Text(
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Center(
+              child: Text('🎯', style: TextStyle(fontSize: 16)),
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Text(
             'Flutter Mastery',
-            style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: 0.2,
+            ),
           ),
         ],
       ),
-      elevation: 0,
       actions: [
         IconButton(
-          icon: const Icon(Icons.notifications_outlined),
           onPressed: onNotification,
+          icon: const Icon(
+            Icons.notifications_none_rounded,
+            color: Colors.white,
+          ),
         ),
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: GestureDetector(
-            onTap: onProfileTap,
-            child: const CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Text('👨‍💻', style: TextStyle(fontSize: 18)),
+        GestureDetector(
+          onTap: onProfileTap,
+          child: Container(
+            margin: const EdgeInsets.only(right: 16),
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withOpacity(0.4),
+                width: 1.5,
+              ),
+            ),
+            child: const Icon(
+              Icons.person_rounded,
+              color: Colors.white,
+              size: 18,
             ),
           ),
         ),

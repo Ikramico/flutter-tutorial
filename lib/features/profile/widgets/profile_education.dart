@@ -1,113 +1,92 @@
 import 'package:flutter/material.dart';
-import '../../../core/shared_widgets.dart';
+import '../../../core/theme/app_theme.dart';
 
 class ProfileEducation extends StatelessWidget {
   const ProfileEducation({super.key});
+
+  static const _educations = [
+    {
+      'degree': 'B.Sc. in Computer Science',
+      'institution': 'Rajshahi University of Engineering & Technology',
+      'period': '2021 – Present',
+      'icon': '🎓',
+    },
+    {
+      'degree': 'Higher Secondary Certificate',
+      'institution': 'Rajshahi College',
+      'period': '2019 – 2021',
+      'icon': '🏫',
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Card(
-        elevation: 2,
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: const Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CardHeader(icon: Icons.school_outlined, title: 'Education'),
-              SizedBox(height: 16),
-              _EduTile(
-                degree: 'B.Sc. in Computer Science & Engineering',
-                institution:
-                    'Bangladesh University of Engineering & Technology (BUET)',
-                period: '2020 — Present',
-                grade: 'CGPA 3.75 / 4.00',
-                color: Color(0xFF7C3AED),
-                icon: Icons.school_outlined,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.school_outlined, color: AppColors.primary, size: 18),
+                SizedBox(width: 8),
+                Text('Education', style: AppTextStyles.h3),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ..._educations.map(
+              (edu) => Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(edu['icon']!, style: const TextStyle(fontSize: 24)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            edu['degree']!,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            edu['institution']!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(edu['period']!, style: AppTextStyles.bodySmall),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              Divider(height: 28),
-              _EduTile(
-                degree: 'Higher Secondary Certificate (Science)',
-                institution: 'Dhaka College',
-                period: '2018 — 2020',
-                grade: 'GPA 5.00 / 5.00',
-                color: Color(0xFFF59E0B),
-                icon: Icons.menu_book_outlined,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-    );
-  }
-}
-
-class _EduTile extends StatelessWidget {
-  final String degree, institution, period, grade;
-  final Color color;
-  final IconData icon;
-
-  const _EduTile({
-    required this.degree,
-    required this.institution,
-    required this.period,
-    required this.grade,
-    required this.color,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(degree,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w700, fontSize: 14)),
-              const SizedBox(height: 3),
-              Text(institution,
-                  style: const TextStyle(
-                      color: Colors.grey, fontSize: 13, height: 1.4)),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today_outlined,
-                      size: 12, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(period,
-                      style: const TextStyle(
-                          color: Colors.grey, fontSize: 12)),
-                  const SizedBox(width: 12),
-                  Icon(Icons.star_rounded, size: 13, color: color),
-                  const SizedBox(width: 3),
-                  Text(grade,
-                      style: TextStyle(
-                          color: color,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

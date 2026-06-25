@@ -1,15 +1,21 @@
-name: flutter_mastery
-description: A beautiful Flutter Tutorial App
+name: flutteria
+description: A beautiful Flutter Quiz App with Google Authentication
 
 publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: '^3.11.0'        # ← This is what you need
+  sdk: '^3.11.0'
 
 dependencies:
+  equatable: ^2.0.8
   flutter:
     sdk: flutter
+  flutter_bloc: ^9.1.1
+  get_it: ^9.2.1
+  go_router: ^17.3.0
+  google_sign_in: ^6.2.2
+  http: ^1.2.2
 
 flutter:
   uses-material-design: true
