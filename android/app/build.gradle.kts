@@ -1,6 +1,9 @@
+
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
 }
@@ -20,9 +23,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.basic"
-        // google_sign_in requires minSdk 21+
-        minSdk = 21
+        applicationId = "com.example.flutteria"
+        minSdk = flutter.minSdkVersion  // ✅ google_sign_in requires minimum SDK 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

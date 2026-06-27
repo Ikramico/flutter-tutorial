@@ -1,7 +1,9 @@
 // lib/features/auth/auth_bloc.dart
+// ✅ Compatible with google_sign_in v7.2.0
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import '../../data/app_user.dart';
 import '../../data/repositories/auth_repository.dart';
 
@@ -16,54 +18,59 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthGoogleSignInRequested>(_onSignIn);
     on<AuthSignOutRequested>(_onSignOut);
 
-    // Attempt silent restore immediately when the bloc is created.
+    debugPrint('[AuthBloc] created → firing AuthCheckRequested');
     add(const AuthCheckRequested());
   }
 
-  /// Called once at startup — restores a previous Google session silently.
   Future<void> _onCheckRequested(
     AuthCheckRequested event,
     Emitter<AuthState> emit,
   ) async {
+    debugPrint('[AuthBloc] ▶ AuthCheckRequested');
     emit(const AuthLoading());
     try {
       final user = await _authRepository.signInSilently();
       if (user != null) {
+        debugPrint('[AuthBloc] ✅ → AuthAuthenticated (${user.email})');
         emit(AuthAuthenticated(user));
       } else {
+        debugPrint('[AuthBloc] ℹ️  → AuthUnauthenticated');
         emit(const AuthUnauthenticated());
       }
-    } catch (_) {
-      // Silent restore failed → show login screen.
+    } catch (e) {
+      debugPrint('[AuthBloc] ❌ → AuthUnauthenticated (error: $e)');
       emit(const AuthUnauthenticated());
     }
   }
 
-  /// Triggered when the user taps "Continue with Google".
   Future<void> _onSignIn(
     AuthGoogleSignInRequested event,
     Emitter<AuthState> emit,
   ) async {
+    debugPrint('[AuthBloc] ▶ AuthGoogleSignInRequested');
     emit(const AuthLoading());
     try {
       final user = await _authRepository.signInWithGoogle();
       if (user != null) {
+        debugPrint('[AuthBloc] ✅ → AuthAuthenticated (${user.email})');
         emit(AuthAuthenticated(user));
       } else {
-        // User dismissed the Google picker without selecting an account.
+        debugPrint('[AuthBloc] ℹ️  → AuthUnauthenticated (cancelled)');
         emit(const AuthUnauthenticated());
       }
     } catch (e) {
+      debugPrint('[AuthBloc] ❌ → AuthError: $e');
       emit(AuthError(e.toString()));
     }
   }
 
-  /// Triggered when the user taps "Sign Out" on the Profile page.
   Future<void> _onSignOut(
     AuthSignOutRequested event,
     Emitter<AuthState> emit,
   ) async {
+    debugPrint('[AuthBloc] ▶ AuthSignOutRequested');
     await _authRepository.signOut();
+    debugPrint('[AuthBloc] → AuthUnauthenticated');
     emit(const AuthUnauthenticated());
   }
 }

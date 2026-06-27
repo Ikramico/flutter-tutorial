@@ -8,16 +8,28 @@ environment:
   sdk: '^3.11.0'
 
 dependencies:
-  equatable: ^2.0.8
   flutter:
     sdk: flutter
+
+  # ── State management ───────────────────────────────────────────────────────
+  bloc: ^9.0.0              # ✅ ADDED: flutter_bloc depends on this explicitly
   flutter_bloc: ^9.1.1
+  equatable: ^2.0.8
+
+  # ── DI ────────────────────────────────────────────────────────────────────
   get_it: ^9.2.1
+
+  # ── Routing ───────────────────────────────────────────────────────────────
   go_router: ^17.3.0
-  google_sign_in: ^6.2.2
+
+  # ── Auth ──────────────────────────────────────────────────────────────────
+  google_sign_in: ^7.2.0
+
+  # ── Network ───────────────────────────────────────────────────────────────
   http: ^1.2.2
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/logo.jpeg
+
