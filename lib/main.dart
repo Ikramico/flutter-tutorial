@@ -4,29 +4,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/di/injection.dart';
 import 'core/router/app_router.dart';
+import 'core/theme/app_theme.dart';
 import 'features/auth/auth_bloc.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // ✅ FIX: Was missing entirely — DI container was never initialised,
-  //    so repositories were never registered with GetIt.
-  setupDI();
-
-  runApp(const MyApp());
+  setupDI(); // ✅ registers all repos + blocs with GetIt
+  runApp(const FlutteriaApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class FlutteriaApp extends StatelessWidget {
+  const FlutteriaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(create: (_) => sl<AuthBloc>(), child: _RouterShell());
+    return BlocProvider(
+      create: (_) => sl<AuthBloc>(),
+      child: const _RouterShell(),
+    );
   }
 }
 
-// Separate widget so we can read AuthBloc after BlocProvider is in the tree.
+/// Separate widget so we can call context.read<AuthBloc>()
+/// after BlocProvider is in the widget tree.
 class _RouterShell extends StatefulWidget {
+  const _RouterShell();
+
   @override
   State<_RouterShell> createState() => _RouterShellState();
 }
@@ -39,6 +42,7 @@ class _RouterShellState extends State<_RouterShell> {
     return MaterialApp.router(
       title: 'Flutteria',
       debugShowCheckedModeBanner: false,
+      theme: AppTheme.theme,
       routerConfig: _router,
     );
   }

@@ -1,10 +1,12 @@
+// lib/data/models/category.dart
+
 import 'package:equatable/equatable.dart';
 
 class QuizCategory extends Equatable {
   final int id;
   final String name;
   final String description;
-  final String icon; // emoji icon for display
+  final String icon;
   final int questionCount;
 
   const QuizCategory({
@@ -21,7 +23,8 @@ class QuizCategory extends Equatable {
       name: json['name'] as String,
       description: json['description'] as String? ?? '',
       icon: json['icon'] as String? ?? '📚',
-      questionCount: json['questionCount'] as int? ?? 0,
+      questionCount:
+          json['questionCount'] as int? ?? json['question_count'] as int? ?? 0,
     );
   }
 

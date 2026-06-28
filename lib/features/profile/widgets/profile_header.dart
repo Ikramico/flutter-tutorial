@@ -10,7 +10,7 @@ class ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
-        final name = state is AuthAuthenticated ? state.user.name : 'Guest';
+        final name = state is AuthAuthenticated ? state.user.displayName : 'Guest';
         final email = state is AuthAuthenticated
             ? state.user.email
             : 'Not signed in';

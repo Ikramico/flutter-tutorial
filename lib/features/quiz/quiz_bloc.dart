@@ -1,8 +1,10 @@
+// lib/features/quiz/quiz_bloc.dart
+
 import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../../data/question.dart';
-import '../../../data/repositories/quiz_repository.dart';
+import '../../data/question.dart';
+import '../../data/repositories/quiz_repository.dart';
 import 'quiz_result.dart';
 
 part 'quiz_event.dart';
@@ -37,10 +39,15 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
     emit(const QuizLoading());
     _answers.clear();
     _currentIndex = 0;
+    _totalElapsed = 0;
     _categoryId = event.categoryId;
     _categoryName = event.categoryName;
     try {
       _questions = await _repository.getQuestions(event.categoryId);
+      if (_questions.isEmpty) {
+        emit(const QuizError('No questions available for this category.'));
+        return;
+      }
       emit(_buildInProgress(selectedAnswer: null, isAnswered: false));
       _startTimer();
     } catch (e) {
@@ -52,7 +59,9 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
     if (state is! QuizInProgress) return;
     final s = state as QuizInProgress;
     if (s.isAnswered) return;
-    _timer?.cancel();
+
+    _timer?.cancel(); // stop the countdown when user answers
+
     emit(
       QuizInProgress(
         questions: _questions,
@@ -117,6 +126,7 @@ class QuizBloc extends Bloc<QuizEvent, QuizState> {
   }
 
   void _onTimedOut(QuizTimedOut event, Emitter<QuizState> emit) {
+    // Auto-advance with null answer (skipped)
     add(const QuizNextQuestion());
   }
 

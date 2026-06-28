@@ -1,28 +1,31 @@
+// lib/features/quiz/view/quiz_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../quiz_bloc.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/di/injection.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../data/category.dart';
+import '../quiz_bloc.dart';
 
-class QuizPage extends StatefulWidget {
+class QuizPage extends StatelessWidget {
   final QuizCategory category;
-
   const QuizPage({super.key, required this.category});
 
   @override
-  State<QuizPage> createState() => _QuizPageState();
-}
-
-class _QuizPageState extends State<QuizPage> {
-  @override
-  void initState() {
-    super.initState();
-    context.read<QuizBloc>().add(
-      QuizStartRequested(widget.category.id, widget.category.name),
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) =>
+          sl<QuizBloc>()..add(QuizStartRequested(category.id, category.name)),
+      child: _QuizView(category: category),
     );
   }
+}
+
+class _QuizView extends StatelessWidget {
+  final QuizCategory category;
+  const _QuizView({required this.category});
 
   @override
   Widget build(BuildContext context) {
@@ -49,41 +52,56 @@ class _QuizPageState extends State<QuizPage> {
 
   Widget _buildBody(BuildContext context, QuizState state) {
     if (state is QuizLoading || state is QuizInitial) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
-      );
-    }
-    if (state is QuizError) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('😕', style: TextStyle(fontSize: 48)),
+            const CircularProgressIndicator(color: Colors.white),
             const SizedBox(height: 16),
             Text(
-              state.message,
-              style: const TextStyle(color: Colors.white70, fontSize: 15),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => context.pop(),
-              child: const Text('Go back'),
+              'Loading ${category.name}…',
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
           ],
         ),
       );
     }
+    if (state is QuizError) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('😕', style: TextStyle(fontSize: 48)),
+              const SizedBox(height: 16),
+              Text(
+                state.message,
+                style: const TextStyle(color: Colors.white70, fontSize: 15),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => context.pop(),
+                child: const Text('Go back'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     if (state is QuizInProgress) {
-      return _QuizInProgressView(state: state, category: widget.category);
+      return _QuizInProgressView(state: state, category: category);
     }
     return const SizedBox();
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _QuizInProgressView extends StatelessWidget {
   final QuizInProgress state;
   final QuizCategory category;
-
   const _QuizInProgressView({required this.state, required this.category});
 
   @override
@@ -91,31 +109,19 @@ class _QuizInProgressView extends StatelessWidget {
     final q = state.currentQuestion;
     final progress = (state.currentIndex + 1) / state.totalQuestions;
     final timerFraction = state.timerSeconds / 30;
-    final isTimerWarning = state.timerSeconds <= 10;
+    final isWarning = state.timerSeconds <= 10;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Top bar ───────────────────────────────────────────────────────
+        // ── Top bar ────────────────────────────────────────────────────────
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
           child: Row(
             children: [
-              GestureDetector(
+              _IconBtn(
+                icon: Icons.close_rounded,
                 onTap: () => _showExitDialog(context),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.close_rounded,
-                    color: Colors.white70,
-                    size: 20,
-                  ),
-                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -144,35 +150,37 @@ class _QuizInProgressView extends StatelessWidget {
           ),
         ),
 
-        // ── Timer ─────────────────────────────────────────────────────────
+        // ── Category + Timer ───────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
           child: Row(
             children: [
-              Text(category.icon, style: const TextStyle(fontSize: 20)),
+              Text(category.icon, style: const TextStyle(fontSize: 18)),
               const SizedBox(width: 8),
-              Text(
-                category.name,
-                style: const TextStyle(
-                  color: Colors.white54,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+              Expanded(
+                child: Text(
+                  category.name,
+                  style: const TextStyle(
+                    color: Colors.white54,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const Spacer(),
               _TimerChip(
                 seconds: state.timerSeconds,
                 fraction: timerFraction,
-                isWarning: isTimerWarning,
+                isWarning: isWarning,
               ),
             ],
           ),
         ),
 
-        // ── Question ──────────────────────────────────────────────────────
+        // ── Question ───────────────────────────────────────────────────────
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -185,17 +193,37 @@ class _QuizInProgressView extends StatelessWidget {
                     letterSpacing: 1.2,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Text(
                   q.question,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: 19,
                     fontWeight: FontWeight.w700,
                     height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 10),
+                // Mark badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${q.mark} pts',
+                    style: const TextStyle(
+                      color: AppColors.accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
                 ...List.generate(
                   q.options.length,
                   (i) => _OptionTile(
@@ -214,7 +242,7 @@ class _QuizInProgressView extends StatelessWidget {
           ),
         ),
 
-        // ── Next button ───────────────────────────────────────────────────
+        // ── Next button ────────────────────────────────────────────────────
         if (state.isAnswered)
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
@@ -250,9 +278,7 @@ class _QuizInProgressView extends StatelessWidget {
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Leave Quiz?'),
-        content: const Text(
-          'Your progress will be lost. Are you sure you want to exit?',
-        ),
+        content: const Text('Your progress will be lost. Are you sure?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -272,6 +298,8 @@ class _QuizInProgressView extends StatelessWidget {
   }
 }
 
+// ── Timer chip ────────────────────────────────────────────────────────────────
+
 class _TimerChip extends StatelessWidget {
   final int seconds;
   final double fraction;
@@ -285,13 +313,14 @@ class _TimerChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isWarning ? AppColors.accent : Colors.white;
-    return Container(
+    final color = isWarning ? AppColors.error : Colors.white;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: (isWarning ? AppColors.accent : Colors.white).withOpacity(0.12),
+        color: color.withOpacity(isWarning ? 0.18 : 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: color.withOpacity(0.35)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -303,7 +332,7 @@ class _TimerChip extends StatelessWidget {
             style: TextStyle(
               color: color,
               fontSize: 14,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
@@ -311,6 +340,8 @@ class _TimerChip extends StatelessWidget {
     );
   }
 }
+
+// ── Option tile ───────────────────────────────────────────────────────────────
 
 class _OptionTile extends StatelessWidget {
   final int index;
@@ -334,7 +365,7 @@ class _OptionTile extends StatelessWidget {
     Color borderColor;
     Color bgColor;
     Color textColor;
-    Widget? trailingIcon;
+    Widget? trailing;
 
     if (!isAnswered) {
       borderColor = Colors.white.withOpacity(0.12);
@@ -344,7 +375,7 @@ class _OptionTile extends StatelessWidget {
       borderColor = AppColors.success;
       bgColor = AppColors.success.withOpacity(0.15);
       textColor = AppColors.success;
-      trailingIcon = const Icon(
+      trailing = const Icon(
         Icons.check_circle_rounded,
         color: AppColors.success,
         size: 20,
@@ -353,7 +384,7 @@ class _OptionTile extends StatelessWidget {
       borderColor = AppColors.error;
       bgColor = AppColors.error.withOpacity(0.15);
       textColor = AppColors.error;
-      trailingIcon = const Icon(
+      trailing = const Icon(
         Icons.cancel_rounded,
         color: AppColors.error,
         size: 20,
@@ -369,7 +400,7 @@ class _OptionTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
+        duration: const Duration(milliseconds: 220),
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
@@ -389,7 +420,7 @@ class _OptionTile extends StatelessWidget {
               ),
               child: Center(
                 child: Text(
-                  labels[index],
+                  labels[index % labels.length],
                   style: TextStyle(
                     color: textColor,
                     fontSize: 12,
@@ -410,12 +441,31 @@ class _OptionTile extends StatelessWidget {
                 ),
               ),
             ),
-            if (trailingIcon != null) ...[
-              const SizedBox(width: 8),
-              trailingIcon,
-            ],
+            if (trailing != null) ...[const SizedBox(width: 8), trailing],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _IconBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _IconBtn({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: Colors.white70, size: 20),
       ),
     );
   }

@@ -1,68 +1,110 @@
+// lib/data/repositories/quiz_repository.dart
+
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../question.dart';
 
+// ── Abstract contract ─────────────────────────────────────────────────────────
+
 abstract class QuizRepository {
+  /// Returns 10 questions for the given [categoryId].
   Future<List<Question>> getQuestions(int categoryId);
 }
 
+// ── Real API implementation ───────────────────────────────────────────────────
+//
+// Open Trivia DB — https://opentdb.com
+// GET https://opentdb.com/api.php?amount=10&category=9&type=multiple
+//
+// Response shape:
+// {
+//   "response_code": 0,
+//   "results": [{
+//     "category": "...",
+//     "type": "multiple",
+//     "difficulty": "easy",
+//     "question": "Which ...",
+//     "correct_answer": "Paris",
+//     "incorrect_answers": ["London","Berlin","Madrid"]
+//   }]
+// }
+//
+// We decode HTML entities (opentdb encodes & as &amp; etc.) and shuffle
+// the options, keeping track of the correct index.
+
 class ApiQuizRepository implements QuizRepository {
-  static const String _baseUrl =
-      'https://sadiks-quiz-apihub.lovable.app/api/v1';
+  static const _baseUrl = 'https://opentdb.com/api.php';
 
-  /// Fetches up to [count] random questions for [categoryId].
-  /// Falls back to the paginated endpoint if the random endpoint returns empty.
   @override
-  Future<List<Question>> getQuestions(int categoryId, {int count = 10}) async {
-    // Prefer the /random endpoint so each quiz session is varied
-    final randomUri = Uri.parse(
-      '$_baseUrl/categories/$categoryId/questions/random?count=$count',
+  Future<List<Question>> getQuestions(int categoryId) async {
+    final uri = Uri.parse(
+      '$_baseUrl?amount=10&category=$categoryId&type=multiple&encode=url3986',
     );
-    final randomRes = await http.get(randomUri);
 
-    if (randomRes.statusCode == 200) {
-      final body = jsonDecode(randomRes.body) as Map<String, dynamic>;
-      if (body['success'] == true) {
-        final data = body['data'] as List<dynamic>;
-        if (data.isNotEmpty) {
-          return _parseQuestions(data);
-        }
+    try {
+      final response = await http.get(uri).timeout(const Duration(seconds: 12));
+
+      if (response.statusCode != 200) {
+        throw Exception('API error ${response.statusCode}');
       }
+
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      final code = data['response_code'] as int;
+
+      // response_code meanings: 0=OK, 1=no results, 2=invalid param, 5=rate limit
+      if (code == 5) throw Exception('Rate limited — please wait a moment.');
+      if (code != 0)
+        throw Exception('No questions available for this category.');
+
+      final results = data['results'] as List<dynamic>;
+
+      return results.asMap().entries.map((entry) {
+        final i = entry.key;
+        final raw = entry.value as Map<String, dynamic>;
+
+        final correct = _decode(raw['correct_answer'] as String);
+        final incorrects = (raw['incorrect_answers'] as List<dynamic>)
+            .map((e) => _decode(e as String))
+            .toList();
+
+        // Deterministically shuffle so correct answer isn't always first.
+        // We insert correct at a position based on question index so it
+        // differs per question without needing dart:math Random (reproducible).
+        final options = [...incorrects];
+        final correctIdx = i % 4; // 0,1,2,3 pattern
+        options.insert(correctIdx, correct);
+
+        return Question(
+          id: i,
+          question: _decode(raw['question'] as String),
+          options: options,
+          answerIndex: correctIdx,
+          mark: _markForDifficulty(raw['difficulty'] as String? ?? 'medium'),
+          explanation: null,
+        );
+      }).toList();
+    } catch (e) {
+      debugPrint('[QuizRepository] error: $e');
+      rethrow;
     }
-
-    // Fallback: regular paginated endpoint
-    final fallbackUri = Uri.parse(
-      '$_baseUrl/categories/$categoryId/questions?limit=$count',
-    );
-    final fallbackRes = await http.get(fallbackUri);
-
-    if (fallbackRes.statusCode != 200) {
-      throw Exception('Failed to load questions (${fallbackRes.statusCode})');
-    }
-
-    final body = jsonDecode(fallbackRes.body) as Map<String, dynamic>;
-    if (body['success'] != true) {
-      throw Exception(body['message'] ?? 'Unknown error');
-    }
-
-    final data = body['data'] as List<dynamic>;
-    if (data.isEmpty) {
-      throw Exception('No questions found for this category.');
-    }
-
-    return _parseQuestions(data);
   }
 
-  List<Question> _parseQuestions(List<dynamic> data) {
-    return data.map((json) {
-      final map = json as Map<String, dynamic>;
-      return Question(
-        id: map['id'] as int,
-        question: map['question'] as String,
-        options: List<String>.from(map['options'] as List),
-        answerIndex: map['answerIndex'] as int,
-        mark: map['mark'] as int? ?? 10,
-      );
-    }).toList();
+  // ── Helpers ─────────────────────────────────────────────────────────────
+
+  /// Decode URL-encoded (RFC 3986) strings from opentdb.
+  String _decode(String encoded) {
+    return Uri.decodeComponent(encoded);
+  }
+
+  int _markForDifficulty(String difficulty) {
+    switch (difficulty) {
+      case 'hard':
+        return 15;
+      case 'medium':
+        return 10;
+      default:
+        return 5; // easy
+    }
   }
 }

@@ -1,8 +1,9 @@
+// lib/features/quiz/quiz_state.dart
+
 part of 'quiz_bloc.dart';
 
 abstract class QuizState extends Equatable {
   const QuizState();
-
   @override
   List<Object?> get props => [];
 }
@@ -18,7 +19,7 @@ class QuizLoading extends QuizState {
 class QuizInProgress extends QuizState {
   final List<Question> questions;
   final int currentIndex;
-  final int? selectedAnswerIndex; // null = not yet answered
+  final int? selectedAnswerIndex;
   final bool isAnswered;
   final int timerSeconds;
   final List<AnsweredQuestion> answeredSoFar;
@@ -49,18 +50,14 @@ class QuizInProgress extends QuizState {
 
 class QuizCompleted extends QuizState {
   final QuizResult result;
-
   const QuizCompleted(this.result);
-
   @override
   List<Object?> get props => [result];
 }
 
 class QuizError extends QuizState {
   final String message;
-
   const QuizError(this.message);
-
   @override
   List<Object?> get props => [message];
 }

@@ -1,12 +1,4 @@
-// lib/features/profile/profile_page.dart
-//
-// ✅ FIX: Original imported 7 sub-widgets that don't exist yet:
-//    profile_header, profile_bio, profile_stats, profile_skills,
-//    profile_experience, profile_education, profile_contact
-//    — all caused "Target of URI doesn't exist" compile errors.
-//
-//    Replaced with a self-contained page. Add the sub-widget files
-//    back whenever you build them out.
+
 
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
@@ -17,7 +9,7 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.success,
       appBar: AppBar(
         title: const Text('My Profile'),
         leading: const BackButton(color: Colors.white),

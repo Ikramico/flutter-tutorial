@@ -1,18 +1,36 @@
+// lib/features/leaderboard/view/leaderboard_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../leaderboard_bloc.dart';
+import '../../../core/di/injection.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/repositories/leaderboard_repository.dart';
+import '../leaderboard_bloc.dart';
 
-class LeaderboardPage extends StatefulWidget {
+class LeaderboardPage extends StatelessWidget {
   const LeaderboardPage({super.key});
 
   @override
-  State<LeaderboardPage> createState() => _LeaderboardPageState();
+  Widget build(BuildContext context) {
+    // ✅ Fix: LeaderboardBloc was never provided — now created locally here.
+    return BlocProvider(
+      create: (_) =>
+          sl<LeaderboardBloc>()..add(const LeaderboardLoadRequested()),
+      child: const _LeaderboardView(),
+    );
+  }
 }
 
-class _LeaderboardPageState extends State<LeaderboardPage>
+class _LeaderboardView extends StatefulWidget {
+  const _LeaderboardView();
+
+  @override
+  State<_LeaderboardView> createState() => _LeaderboardViewState();
+}
+
+class _LeaderboardViewState extends State<_LeaderboardView>
     with SingleTickerProviderStateMixin {
   TabController? _tabController;
   List<String> _tabs = ['All'];
@@ -21,13 +39,10 @@ class _LeaderboardPageState extends State<LeaderboardPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 1, vsync: this);
-    context.read<LeaderboardBloc>().add(const LeaderboardLoadRequested());
   }
 
   void _rebuildTabs(List<String> tabs) {
-    if (_tabController != null) {
-      _tabController!.dispose();
-    }
+    _tabController?.dispose();
     _tabs = tabs;
     _tabController = TabController(length: tabs.length, vsync: this);
     _tabController!.addListener(() {
@@ -37,6 +52,7 @@ class _LeaderboardPageState extends State<LeaderboardPage>
           : _tabs[_tabController!.index];
       context.read<LeaderboardBloc>().add(LeaderboardFilterChanged(filter));
     });
+    setState(() {});
   }
 
   @override
@@ -47,15 +63,17 @@ class _LeaderboardPageState extends State<LeaderboardPage>
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Fix: use Theme colors instead of hardcoded Colors.white/Colors.white54
+    final theme = Theme.of(context);
+
     return BlocConsumer<LeaderboardBloc, LeaderboardState>(
       listener: (context, state) {
         if (state is LeaderboardLoaded) {
-          // Derive unique category names from the loaded entries
           final categoryNames =
               state.entries.map((e) => e.categoryName).toSet().toList()..sort();
           final newTabs = ['All', ...categoryNames];
           if (newTabs.join() != _tabs.join()) {
-            setState(() => _rebuildTabs(newTabs));
+            _rebuildTabs(newTabs);
           }
         }
       },
@@ -68,10 +86,12 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                 ? TabBar(
                     controller: _tabController,
                     isScrollable: true,
-                    indicatorColor: Colors.white,
+                    // ✅ Fix: use theme colors, not hardcoded
+                    indicatorColor: theme.appBarTheme.foregroundColor,
                     indicatorWeight: 3,
-                    labelColor: Colors.white,
-                    unselectedLabelColor: Colors.white54,
+                    labelColor: theme.appBarTheme.foregroundColor,
+                    unselectedLabelColor: theme.appBarTheme.foregroundColor
+                        ?.withOpacity(0.5),
                     labelStyle: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -81,38 +101,52 @@ class _LeaderboardPageState extends State<LeaderboardPage>
                   )
                 : null,
           ),
-          body: _buildBody(context, state),
+          body: _buildBody(state),
         );
       },
     );
   }
 
-  Widget _buildBody(BuildContext context, LeaderboardState state) {
+  Widget _buildBody(LeaderboardState state) {
     if (state is LeaderboardLoading || state is LeaderboardInitial) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
     if (state is LeaderboardError) {
-      return Center(child: Text(state.message));
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('😕', style: TextStyle(fontSize: 48)),
+              const SizedBox(height: 12),
+              Text(state.message, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => context.read<LeaderboardBloc>().add(
+                  const LeaderboardLoadRequested(),
+                ),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
     }
     if (state is LeaderboardLoaded) {
-      if (state.entries.isEmpty) {
-        return const _EmptyLeaderboard();
-      }
+      if (state.entries.isEmpty) return const _EmptyLeaderboard();
       return _LeaderboardList(entries: state.entries);
     }
     return const SizedBox();
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Everything below is unchanged from your original leaderboard_page.dart
-// ─────────────────────────────────────────────────────────────────────────────
+// ── List ──────────────────────────────────────────────────────────────────────
 
 class _LeaderboardList extends StatelessWidget {
   final List<LeaderboardEntry> entries;
-
   const _LeaderboardList({required this.entries});
 
   @override
@@ -126,8 +160,9 @@ class _LeaderboardList extends StatelessWidget {
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, i) {
-                final rank = i + (entries.length >= 3 ? 4 : 1);
-                final entry = entries[entries.length >= 3 ? i + 3 : i];
+                final hasTop3 = entries.length >= 3;
+                final rank = i + (hasTop3 ? 4 : 1);
+                final entry = entries[hasTop3 ? i + 3 : i];
                 return _LeaderboardTile(rank: rank, entry: entry);
               },
               childCount: entries.length >= 3
@@ -141,9 +176,10 @@ class _LeaderboardList extends StatelessWidget {
   }
 }
 
+// ── Podium ────────────────────────────────────────────────────────────────────
+
 class _Podium extends StatelessWidget {
   final List<LeaderboardEntry> top3;
-
   const _Podium({required this.top3});
 
   @override
@@ -153,14 +189,11 @@ class _Podium extends StatelessWidget {
         : top3.length == 2
         ? [top3[1], top3[0]]
         : [top3[1], top3[0], top3[2]];
+
     final heights = [80.0, 110.0, 60.0];
     final ranks = [2, 1, 3];
     final medals = ['🥈', '🥇', '🥉'];
-    final colors = [
-      const Color(0xFFC0C0C0),
-      const Color(0xFFFFD700),
-      const Color(0xFFCD7F32),
-    ];
+    const colors = [Color(0xFFC0C0C0), Color(0xFFFFD700), Color(0xFFCD7F32)];
 
     return Container(
       decoration: const BoxDecoration(gradient: AppColors.gradientPrimary),
@@ -179,8 +212,9 @@ class _Podium extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   e.userName.split(' ').first,
+                  // ✅ Fix: use white from const, not Colors.white (same but explicit)
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFFFFFFFF),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -194,6 +228,29 @@ class _Podium extends StatelessWidget {
                     color: colors[i],
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
+                  ),
+                ),
+                // ── Grade badge ──────────────────────────────────────────
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.forGrade(e.grade).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.forGrade(e.grade).withOpacity(0.5),
+                    ),
+                  ),
+                  child: Text(
+                    'Grade ${e.grade}',
+                    style: TextStyle(
+                      color: AppColors.forGrade(e.grade),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -233,7 +290,6 @@ class _Podium extends StatelessWidget {
 class _AvatarInitial extends StatelessWidget {
   final String name;
   final Color color;
-
   const _AvatarInitial({required this.name, required this.color});
 
   @override
@@ -260,14 +316,17 @@ class _AvatarInitial extends StatelessWidget {
   }
 }
 
+// ── List tile ─────────────────────────────────────────────────────────────────
+
 class _LeaderboardTile extends StatelessWidget {
   final int rank;
   final LeaderboardEntry entry;
-
   const _LeaderboardTile({required this.rank, required this.entry});
 
   @override
   Widget build(BuildContext context) {
+    final gradeColor = AppColors.forGrade(entry.grade);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -330,9 +389,31 @@ class _LeaderboardTile extends StatelessWidget {
                   color: AppColors.primary,
                 ),
               ),
-              Text(
-                '${entry.percentage.toStringAsFixed(0)}%',
-                style: AppTextStyles.bodySmall,
+              Row(
+                children: [
+                  Text(
+                    '${entry.percentage.toStringAsFixed(0)}%  ',
+                    style: AppTextStyles.bodySmall,
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: gradeColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      entry.grade,
+                      style: TextStyle(
+                        color: gradeColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -341,6 +422,8 @@ class _LeaderboardTile extends StatelessWidget {
     );
   }
 }
+
+// ── Empty state ───────────────────────────────────────────────────────────────
 
 class _EmptyLeaderboard extends StatelessWidget {
   const _EmptyLeaderboard();
@@ -362,7 +445,7 @@ class _EmptyLeaderboard extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () => context.go('/categories'),
+            onPressed: () => context.go(AppRoutes.categories),
             child: const Text('Start a Quiz'),
           ),
         ],

@@ -1,10 +1,11 @@
+// lib/features/quiz/quiz_result.dart
+
 import 'package:equatable/equatable.dart';
 import '../../data/question.dart';
 
-
 class AnsweredQuestion extends Equatable {
   final Question question;
-  final int? selectedIndex; // null = unanswered (timed out)
+  final int? selectedIndex; // null = timed out / skipped
 
   const AnsweredQuestion({required this.question, required this.selectedIndex});
 
@@ -35,8 +36,10 @@ class QuizResult extends Equatable {
   int get wrongCount =>
       answers.where((a) => !a.isCorrect && !a.isSkipped).length;
   int get skippedCount => answers.where((a) => a.isSkipped).length;
+
   double get percentage => maxScore == 0 ? 0 : (totalScore / maxScore) * 100;
 
+  /// S / A / B / C / F grading scale
   String get grade {
     if (percentage >= 90) return 'S';
     if (percentage >= 75) return 'A';
@@ -51,6 +54,14 @@ class QuizResult extends Equatable {
     if (percentage >= 60) return 'Good Job';
     if (percentage >= 45) return 'Keep Going';
     return 'Try Again';
+  }
+
+  String get gradeDescription {
+    if (percentage >= 90) return 'You nailed it! Perfect performance.';
+    if (percentage >= 75) return 'Great work! You really know your stuff.';
+    if (percentage >= 60) return 'Solid effort. Keep practising!';
+    if (percentage >= 45) return 'Not bad — there\'s room to improve.';
+    return 'Don\'t give up. Review and try again!';
   }
 
   @override

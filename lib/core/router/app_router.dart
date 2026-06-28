@@ -1,3 +1,5 @@
+// lib/core/router/app_router.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/category.dart';
@@ -24,7 +26,7 @@ class AppRoutes {
 GoRouter buildRouter(AuthBloc authBloc) {
   return GoRouter(
     initialLocation: AppRoutes.login,
-    refreshListenable: GoRouterRefreshStream(authBloc.stream),
+    refreshListenable: _GoRouterRefreshStream(authBloc.stream),
     redirect: (context, state) {
       final authState = authBloc.state;
       final isLoginPage = state.matchedLocation == AppRoutes.login;
@@ -75,9 +77,17 @@ GoRouter buildRouter(AuthBloc authBloc) {
   );
 }
 
-// Converts a Bloc stream to a Listenable for GoRouter
-class GoRouterRefreshStream extends ChangeNotifier {
-  GoRouterRefreshStream(Stream<dynamic> stream) {
-    stream.listen((_) => notifyListeners());
+/// Converts a BLoC stream into a [Listenable] for GoRouter's refreshListenable.
+class _GoRouterRefreshStream extends ChangeNotifier {
+  _GoRouterRefreshStream(Stream<dynamic> stream) {
+    _sub = stream.listen((_) => notifyListeners());
+  }
+
+  late final dynamic _sub;
+
+  @override
+  void dispose() {
+    (_sub as dynamic).cancel();
+    super.dispose();
   }
 }

@@ -1,156 +1,172 @@
+// lib/features/home/home_screen.dart
+
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
-import 'widgets/home_app_bar.dart';
-import 'widgets/hero_section.dart';
-import 'widgets/nav_chips.dart';
-import 'widgets/content_section.dart';
-import 'widgets/sandbox_section.dart';
-import 'widgets/resources_section.dart';
-import 'widgets/videos_section.dart';
+import '../auth/auth_bloc.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Flutteria'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none_rounded),
+            onPressed: () => _showSnack(context, 'No new notifications'),
+          ),
+          GestureDetector(
+            onTap: () => context.push(AppRoutes.profile),
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16, left: 4),
+              child: BlocBuilder<AuthBloc, AuthState>(
+                builder: (context, state) {
+                  final initials = state is AuthAuthenticated
+                      ? state.user.initials
+                      : '?';
+                  return CircleAvatar(
+                    radius: 17,
+                    backgroundColor: Colors.white.withOpacity(0.2),
+                    child: Text(
+                      initials,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Greeting ────────────────────────────────────────────────────
+            BlocBuilder<AuthBloc, AuthState>(
+              builder: (context, state) {
+                final name = state is AuthAuthenticated
+                    ? state.user.displayName.split(' ').first
+                    : 'there';
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Hello, $name 👋', style: AppTextStyles.h1),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Ready to test your knowledge?',
+                      style: AppTextStyles.body,
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 28),
 
-class _HomeScreenState extends State<HomeScreen> {
-  int _currentSection = 0;
+            // ── Hero banner ─────────────────────────────────────────────────
+            _HeroBanner(),
+            const SizedBox(height: 28),
 
-  static const _sections = [
-    'Home',
-    'Content',
-    'Practice',
-    'Resources',
-    'Videos',
-  ];
+            // ── Quiz & Leaderboard CTAs ─────────────────────────────────────
+            const Text('Test Your Skills', style: AppTextStyles.h3),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: _CTACard(
+                    emoji: '🎯',
+                    title: 'Take a Quiz',
+                    subtitle: '24 categories available',
+                    gradient: AppColors.gradientPrimary,
+                    onTap: () => context.push(AppRoutes.categories),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 2,
+                  child: _CTACardLight(
+                    emoji: '🏆',
+                    title: 'Leader-\nboard',
+                    onTap: () => context.push(AppRoutes.leaderboard),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 28),
 
-  void _showSnackBar(String message) {
+            // ── How it works ────────────────────────────────────────────────
+            const Text('How It Works', style: AppTextStyles.h3),
+            const SizedBox(height: 14),
+            _HowItWorks(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSnack(BuildContext context, String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(msg),
         behavior: SnackBarBehavior.floating,
         backgroundColor: AppColors.primary,
         duration: const Duration(seconds: 2),
       ),
     );
   }
+}
 
-  void _showPracticeSandbox() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Practice Sandbox'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Try editing this code snippet:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 12),
-            Card(
-              color: Color(0xFF2C2C2C),
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Text(
-                  'Container(\n'
-                  '  child: Text("Hello Flutter!"),\n'
-                  '  padding: EdgeInsets.all(20),\n'
-                  ')',
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    color: Colors.greenAccent,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _showSnackBar('Great! Keep practicing in VS Code 💪');
-            },
-            child: const Text('Try It Yourself'),
-          ),
-        ],
-      ),
-    );
-  }
-
+class _HeroBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: HomeAppBar(
-        onNotification: () => _showSnackBar('No new notifications'),
-        onProfileTap: () => context.push(AppRoutes.profile),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: AppColors.gradientQuiz,
+        borderRadius: BorderRadius.circular(20),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            HeroSection(
-              onStart: () =>
-                  _showSnackBar('Welcome to your learning journey! 🚀'),
-              onProfile: () => context.push(AppRoutes.profile),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('🎓', style: TextStyle(fontSize: 36)),
+          const SizedBox(height: 12),
+          const Text(
+            'Sharpen your\ndev skills daily',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              height: 1.25,
             ),
-            const SizedBox(height: 24),
-            NavChips(
-              sections: _sections,
-              currentIndex: _currentSection,
-              onTap: (i) {
-                setState(() => _currentSection = i);
-                _showSnackBar('Switched to ${_sections[i]}');
-              },
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Timed quizzes · Grade S–F · Global leaderboard',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.65),
+              fontSize: 13,
             ),
-            const SizedBox(height: 16),
-
-            // ── Quiz & Leaderboard CTA ───────────────────────────────────
-            _QuizBanner(),
-            const SizedBox(height: 24),
-
-            ContentSection(onModuleTap: _showSnackBar),
-            const SizedBox(height: 32),
-            SandboxSection(onOpen: _showPracticeSandbox),
-            const SizedBox(height: 32),
-            ResourcesSection(onTap: _showSnackBar),
-            const SizedBox(height: 32),
-            VideosSection(onTap: _showSnackBar),
-            const SizedBox(height: 50),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentSection > 3 ? 0 : _currentSection,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: Colors.grey,
-        onTap: (i) {
-          setState(() => _currentSection = i);
-          if (i == 2) {
-            _showPracticeSandbox();
-          } else if (i == 3) {
-            context.push(AppRoutes.profile);
-          } else {
-            _showSnackBar('Navigated to ${_sections[i]}');
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'Learn'),
-          BottomNavigationBarItem(icon: Icon(Icons.code), label: 'Practice'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () => context.push(AppRoutes.categories),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.accent,
+              minimumSize: const Size(140, 44),
+            ),
+            child: const Text('Start Now →'),
           ),
         ],
       ),
@@ -158,95 +174,162 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _QuizBanner extends StatelessWidget {
+class _CTACard extends StatelessWidget {
+  final String emoji;
+  final String title;
+  final String subtitle;
+  final LinearGradient gradient;
+  final VoidCallback onTap;
+
+  const _CTACard({
+    required this.emoji,
+    required this.title,
+    required this.subtitle,
+    required this.gradient,
+    required this.onTap,
+  });
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Test Your Skills', style: AppTextStyles.h3),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                flex: 3,
-                child: GestureDetector(
-                  onTap: () => context.push(AppRoutes.categories),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF5C35D4), Color(0xFF8B5CF6)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('🎯', style: TextStyle(fontSize: 28)),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Take a Quiz',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '6 topics available',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 28)),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: GestureDetector(
-                  onTap: () => context.push(AppRoutes.leaderboard),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF3E0),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: const Color(0xFFFFB74D).withOpacity(0.4),
-                      ),
-                    ),
-                    child: const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('🏆', style: TextStyle(fontSize: 28)),
-                        SizedBox(height: 10),
-                        Text(
-                          'Leader-\nboard',
-                          style: TextStyle(
-                            color: Color(0xFFE65100),
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            height: 1.2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 12,
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _CTACardLight extends StatelessWidget {
+  final String emoji;
+  final String title;
+  final VoidCallback onTap;
+
+  const _CTACardLight({
+    required this.emoji,
+    required this.title,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF3E0),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.4)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 28)),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Color(0xFFE65100),
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                height: 1.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HowItWorks extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    const steps = [
+      ('1', '🗂️', 'Pick a Category', 'Choose from 24 trivia topics'),
+      ('2', '⏱️', 'Answer in 30s', '30 seconds per question'),
+      ('3', '📊', 'Get Graded', 'S, A, B, C or F grade'),
+      ('4', '🏆', 'Hit Leaderboard', 'Compete with everyone'),
+    ];
+
+    return Column(
+      children: steps
+          .map(
+            (s) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.card,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Center(
+                        child: Text(
+                          s.$1,
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(s.$2, style: const TextStyle(fontSize: 22)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(s.$3, style: AppTextStyles.label),
+                          Text(s.$4, style: AppTextStyles.bodySmall),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 }

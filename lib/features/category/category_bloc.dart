@@ -1,7 +1,9 @@
+// lib/features/category/category_bloc.dart
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../../data/category.dart';
-import '../../../data/repositories/category_repository.dart';
+import '../../data/category.dart';
+import '../../data/repositories/category_repository.dart';
 
 part 'category_event.dart';
 part 'category_state.dart';

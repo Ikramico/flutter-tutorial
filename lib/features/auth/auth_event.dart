@@ -2,23 +2,31 @@
 
 part of 'auth_bloc.dart';
 
-abstract class AuthEvent extends Equatable {
+sealed class AuthEvent extends Equatable {
   const AuthEvent();
   @override
   List<Object?> get props => [];
 }
 
-/// Fired once at startup to attempt a silent session restore.
+// Public events — triggered from UI / outside the bloc
 class AuthCheckRequested extends AuthEvent {
   const AuthCheckRequested();
 }
 
-/// Fired when the user taps "Continue with Google".
 class AuthGoogleSignInRequested extends AuthEvent {
   const AuthGoogleSignInRequested();
 }
 
-/// Fired when the user taps "Sign Out".
 class AuthSignOutRequested extends AuthEvent {
   const AuthSignOutRequested();
+}
+
+// Private event — only used internally by AuthBloc to pipe stream updates.
+// The leading underscore keeps it out of the public API.
+final class _AuthUserChanged extends AuthEvent {
+  const _AuthUserChanged(this.user);
+  final AppUser? user;
+
+  @override
+  List<Object?> get props => [user];
 }

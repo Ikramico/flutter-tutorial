@@ -1,32 +1,33 @@
+// lib/features/category/view/category_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../../core/router/app_router.dart';
+import '../../../core/di/injection.dart';
+import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../data/category.dart';
 import '../category_bloc.dart';
 
-class CategoryPage extends StatefulWidget {
+class CategoryPage extends StatelessWidget {
   const CategoryPage({super.key});
 
   @override
-  State<CategoryPage> createState() => _CategoryPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => sl<CategoryBloc>()..add(const CategoryLoadRequested()),
+      child: const _CategoryView(),
+    );
+  }
 }
 
-class _CategoryPageState extends State<CategoryPage> {
-  @override
-  void initState() {
-    super.initState();
-    context.read<CategoryBloc>().add(const CategoryLoadRequested());
-  }
+class _CategoryView extends StatelessWidget {
+  const _CategoryView();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Choose a Topic'),
-        leading: BackButton(onPressed: () => context.pop()),
-      ),
+      appBar: AppBar(title: const Text('Choose a Category')),
       body: BlocBuilder<CategoryBloc, CategoryState>(
         builder: (context, state) {
           if (state is CategoryLoading || state is CategoryInitial) {
@@ -54,120 +55,77 @@ class _CategoryPageState extends State<CategoryPage> {
 
 class _CategoryGrid extends StatelessWidget {
   final List<QuizCategory> categories;
-
   const _CategoryGrid({required this.categories});
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-          sliver: SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${categories.length} topics available',
-                  style: AppTextStyles.bodySmall,
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'What do you want to test today?',
-                  style: AppTextStyles.h2,
-                ),
-              ],
-            ),
-          ),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-          sliver: SliverGrid(
-            delegate: SliverChildBuilderDelegate(
-              (context, i) => _CategoryCard(
-                category: categories[i],
-                colorIndex: i % AppColors.categoryColors.length,
-              ),
-              childCount: categories.length,
-            ),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 14,
-              mainAxisSpacing: 14,
-              childAspectRatio: 0.88,
-            ),
-          ),
-        ),
-      ],
+    return GridView.builder(
+      padding: const EdgeInsets.all(20),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 14,
+        crossAxisSpacing: 14,
+        childAspectRatio: 0.88,
+      ),
+      itemCount: categories.length,
+      itemBuilder: (context, i) => _CategoryCard(category: categories[i]),
     );
   }
 }
 
 class _CategoryCard extends StatelessWidget {
   final QuizCategory category;
-  final int colorIndex;
+  const _CategoryCard({required this.category});
 
-  const _CategoryCard({required this.category, required this.colorIndex});
+  // Cycle through subtle card tints
+  static const _tints = [
+    Color(0xFFF0EBFF),
+    Color(0xFFEBF5FF),
+    Color(0xFFEBFFF5),
+    Color(0xFFFFF8EB),
+    Color(0xFFFFEBEB),
+    Color(0xFFEBFFFF),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final color = AppColors.categoryColors[colorIndex];
+    final tint = _tints[category.id % _tints.length];
 
     return GestureDetector(
       onTap: () => context.push(AppRoutes.quiz, extra: {'category': category}),
       child: Container(
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.2), width: 1.5),
+          color: tint,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.divider),
         ),
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Center(
-                child: Text(
-                  category.icon,
-                  style: const TextStyle(fontSize: 26),
-                ),
-              ),
-            ),
+            Text(category.icon, style: const TextStyle(fontSize: 36)),
             const Spacer(),
             Text(
               category.name,
-              style: TextStyle(
-                fontSize: 16,
+              style: const TextStyle(
+                fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: color,
+                color: AppColors.textPrimary,
+                height: 1.3,
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              category.description,
-              style: AppTextStyles.bodySmall,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Row(
               children: [
-                Icon(Icons.help_outline_rounded, size: 13, color: color),
-                const SizedBox(width: 4),
-                Text(
-                  '${category.questionCount} questions',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
+                const Icon(
+                  Icons.quiz_outlined,
+                  size: 12,
+                  color: AppColors.textMuted,
                 ),
+                const SizedBox(width: 4),
+                Text('10 questions', style: AppTextStyles.bodySmall),
               ],
             ),
           ],
@@ -180,7 +138,6 @@ class _CategoryCard extends StatelessWidget {
 class _ErrorView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
-
   const _ErrorView({required this.message, required this.onRetry});
 
   @override
@@ -193,15 +150,17 @@ class _ErrorView extends StatelessWidget {
           children: [
             const Text('😕', style: TextStyle(fontSize: 48)),
             const SizedBox(height: 16),
-            Text('Something went wrong', style: AppTextStyles.h3),
-            const SizedBox(height: 8),
             Text(
               message,
-              style: AppTextStyles.body,
               textAlign: TextAlign.center,
+              style: AppTextStyles.body,
             ),
-            const SizedBox(height: 24),
-            ElevatedButton(onPressed: onRetry, child: const Text('Try again')),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
           ],
         ),
       ),
